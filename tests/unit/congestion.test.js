@@ -53,25 +53,43 @@ describe('Rideshare pickup', () => {
 
 describe('Door advice', () => {
   test('90% full or more says arrive 10 minutes early', () => {
-    const e = doorEstimate({ seatsTaken: 90, capacity: 100 });
+    const e = doorEstimate({ session: { seatsTaken: 90, capacity: 100, startsAt: '11:00' }, time: '10:30' });
     assert.equal(e.earlyMinutes, 10);
     assert.match(e.advice, /arrive 10 min early/i);
   });
   test('a full session says waitlist only', () => {
-    const e = doorEstimate({ seatsTaken: 100, capacity: 100 });
+    const e = doorEstimate({ session: { seatsTaken: 100, capacity: 100, startsAt: '11:00' }, time: '10:30' });
     assert.match(e.advice, /waitlist only/i);
     assert.equal(e.earlyMinutes, 0);
   });
   test('a half-empty session has no advice', () => {
-    const e = doorEstimate({ seatsTaken: 50, capacity: 100 });
+    const e = doorEstimate({ session: { seatsTaken: 50, capacity: 100, startsAt: '11:00' }, time: '10:30' });
     assert.equal(e.advice, null);
     assert.equal(e.earlyMinutes, 0);
   });
 });
 
+describe('Door timing', () => {
+  test('says how long until it starts', () => {
+    const e = doorEstimate({ session: { seatsTaken: 95, capacity: 100, startsAt: '11:00' }, time: '10:55' });
+    assert.equal(e.earlyMinutes, 5);
+    assert.match(e.label, /starts in 5 min/);
+  });
+});
+
 describe('Food wait', () => {
+  const vendor = { waitMins: 5 };
+  test('starts from the vendor\'s own wait', () => {
+    assert.equal(foodEstimate({ vendor: { waitMins: 5 }, time: '10:00' }).wait, 5);
+    assert.equal(foodEstimate({ vendor: { waitMins: 15 }, time: '10:00' }).wait, 15);
+  });
+  test('the lunch uplift covers 12:15-13:30 only', () => {
+    assert.equal(foodEstimate({ vendor, time: '12:14' }).wait, 5);
+    assert.ok(foodEstimate({ vendor, time: '12:52' }).wait > 5);
+    assert.equal(foodEstimate({ vendor, time: '13:31' }).wait, 5);
+  });
   test('is higher at 12:30 than at 10:00', () => {
-    assert.ok(foodEstimate({ time: '12:30' }).wait > foodEstimate({ time: '10:00' }).wait);
+    assert.ok(foodEstimate({ vendor, time: '12:30' }).wait > foodEstimate({ vendor, time: '10:00' }).wait);
   });
 });
 
@@ -107,7 +125,7 @@ describe('Every estimate', () => {
     for (let m = 0; m < 24 * 60; m++) {
       const time = hhmm(m);
       const args = { time, sessionEnds: ENDS };
-      const outs = [shuttleEstimate(args), pickupEstimate(args), foodEstimate({ time })];
+      const outs = [shuttleEstimate(args), pickupEstimate(args), foodEstimate({ vendor: { waitMins: 5 }, time })];
       const leg = estimateLeg({ travel, from: at(AURORA, 3), to: at(FOUNDRY, 3), gapMinutes: 40, ...args });
       for (const e of outs) {
         for (const [k, v] of Object.entries(e)) if (typeof v === 'number') assert.ok(v >= 0, `${k} at ${time}`);
@@ -119,7 +137,7 @@ describe('Every estimate', () => {
       assert.deepEqual(estimateLeg({ travel, from: at(AURORA, 3), to: at(FOUNDRY, 3), gapMinutes: 40, ...args }), leg);
     }
     for (const seatsTaken of [0, 50, 90, 100]) {
-      const e = doorEstimate({ seatsTaken, capacity: 100 });
+      const e = doorEstimate({ session: { seatsTaken, capacity: 100, startsAt: '11:00' }, time: '10:30' });
       assert.ok(e.earlyMinutes >= 0);
       labels.push(e.label);
     }

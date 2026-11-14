@@ -22,9 +22,8 @@ const PICKUP_BASE = 6;
 const PICKUP_SURGE = 8;
 const EVENING_START = 18 * 60;
 const EVENING_UPLIFT = 3;
-const FOOD_BASE = 3;
-const FOOD_LUNCH_CENTRE = 12 * 60 + 30;
-const FOOD_LUNCH_HALF_WIDTH = 60;
+const FOOD_LUNCH_START = 12 * 60 + 15; // lunch gap 12:15-13:30
+const FOOD_LUNCH_END = 13 * 60 + 30;
 const FOOD_LUNCH_PEAK = 12;
 const DOOR_BUSY_AT = 0.9;
 const DOOR_EARLY_MINUTES = 10;
@@ -68,25 +67,33 @@ export function pickupEstimate({ time, sessionEnds }) {
   return { wait, label: `Pickup usually about ${wait} min (estimate)` };
 }
 
-export function doorEstimate({ seatsTaken, capacity }) {
+export function doorEstimate({ session, time }) {
+  const { seatsTaken = 0, capacity = 0, startsAt } = session || {};
   const ratio = capacity > 0 ? seatsTaken / capacity : 0;
+  const mins = time && startsAt ? toMinutes(startsAt) - toMinutes(time) : null;
+  const starts = mins !== null && mins > 0 ? `, starts in ${mins} min` : '';
   if (capacity > 0 && ratio >= 1) {
-    return { earlyMinutes: 0, advice: 'Full - waitlist only', label: 'Full, so waitlist only (estimate)' };
+    return { earlyMinutes: 0, advice: 'Full - waitlist only', label: `Full, so waitlist only${starts} (estimate)` };
   }
   if (ratio >= DOOR_BUSY_AT) {
+    // Already inside the early window: arriving "10 min early" is no longer possible.
+    const early = mins !== null && mins < DOOR_EARLY_MINUTES ? Math.max(0, mins) : DOOR_EARLY_MINUTES;
     return {
-      earlyMinutes: DOOR_EARLY_MINUTES,
+      earlyMinutes: early,
       advice: `Busy - arrive ${DOOR_EARLY_MINUTES} min early`,
-      label: `Usually fills up, so arrive about ${DOOR_EARLY_MINUTES} min early (estimate)`,
+      label: `Usually fills up, so arrive about ${DOOR_EARLY_MINUTES} min early${starts} (estimate)`,
     };
   }
   return { earlyMinutes: 0, advice: null, label: 'No queue expected at the door (estimate)' };
 }
 
-export function foodEstimate({ time }) {
+export function foodEstimate({ vendor, time }) {
   const now = toMinutes(time);
-  const closeness = Math.max(0, 1 - Math.abs(now - FOOD_LUNCH_CENTRE) / FOOD_LUNCH_HALF_WIDTH);
-  const wait = Math.round(FOOD_BASE + FOOD_LUNCH_PEAK * closeness);
+  const base = Math.max(0, vendor?.waitMins ?? 0);
+  const centre = (FOOD_LUNCH_START + FOOD_LUNCH_END) / 2;
+  const half = (FOOD_LUNCH_END - FOOD_LUNCH_START) / 2;
+  const closeness = Math.max(0, 1 - Math.abs(now - centre) / half);
+  const wait = Math.round(base + FOOD_LUNCH_PEAK * closeness);
   return { wait, label: `Usually about ${wait} min wait (estimate)` };
 }
 
