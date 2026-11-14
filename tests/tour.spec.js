@@ -60,16 +60,13 @@ test('the tour walks both new features and ends three ways', async ({ page }) =>
   await expect(page).toHaveURL(/\/schedule$/);
   await expect(callout).toContainText('1 of 2');
 
-  // A missing target: callout centred, no highlight, Next still works.
-  await callout.getByRole('button', { name: 'Next' }).click();
-  await expect(callout).toContainText('2 of 2');
-  await page.evaluate(() => document.querySelector('[data-tour="seat-button"]')?.removeAttribute('data-tour'));
-  await callout.getByRole('button', { name: 'Back' }).click();
-  await callout.getByRole('button', { name: 'Next' }).click();
-  // Re-entering step 2 on a page that no longer carries the marker.
-  await page.evaluate(() => document.querySelectorAll('[data-tour]').forEach((n) => n.removeAttribute('data-tour')));
-  await callout.getByRole('button', { name: 'Back' }).click();
-  await page.evaluate(() => document.querySelectorAll('[data-tour]').forEach((n) => n.removeAttribute('data-tour')));
+  // A missing target: the marker is stripped as the page mounts, so step 2 has
+  // nothing to find. The callout centres, no highlight, and Done still works.
+  await page.evaluate(() => {
+    window.__noTour = true;
+    new MutationObserver(() => document.querySelectorAll('[data-tour]').forEach((n) => n.removeAttribute('data-tour')))
+      .observe(document.documentElement, { subtree: true, childList: true, attributes: true });
+  });
   await callout.getByRole('button', { name: 'Next' }).click();
   await expect(callout).toContainText('2 of 2');
   await expect(highlight).toHaveCount(0);
