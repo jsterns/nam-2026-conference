@@ -3,7 +3,7 @@ import { useConference, useFetch } from '../lib/store.jsx';
 import * as api from '../lib/api.js';
 import { accent } from '../lib/accents.js';
 import { dayLabel, plural, relativeDate, timeRange } from '../lib/format.js';
-import { routesBetween } from '../lib/travel.js';
+import { routesBetween, hopsFor, hopSummary } from '../lib/travel.js';
 import { SessionCard } from '../components/SessionCard.jsx';
 import { GeneratedCover } from '../components/GeneratedCover.jsx';
 import { SeatPanel } from '../components/SeatPanel.jsx';
@@ -12,6 +12,38 @@ import { Avatar, Button, Chip, ErrorState, NotFoundState, Rating, Skeleton, Trac
 import { Icon } from '../components/Icon.jsx';
 import { useDocumentTitle } from '../lib/useDocumentTitle.js';
 import { hasEnded } from '../lib/clock.js';
+
+function HopNotice({ session }) {
+  const { travel, currentUserId, reservations, reservationFor } = useConference();
+  const { data: schedule } = useFetch(() => api.getSchedule(currentUserId), [currentUserId, reservations]);
+  const hops = hopsFor({ session, schedule, travel, reservationFor });
+  if (!hops.length) return null;
+
+  return (
+    <div className="space-y-3" data-testid="getting-there">
+      {hops.map(({ direction, other, assessment }) => (
+        <div key={other.id} className="rounded-2xl border border-amber-500/25 bg-amber-500/[0.07] p-4">
+          <h3 className="text-sm font-semibold text-amber-200">Getting there</h3>
+          <p className="mt-1 text-[13px] leading-relaxed text-muted">
+            {direction === 'previous' ? 'Before this, you are at ' : 'After this, you are at '}
+            <Link to={`/sessions/${other.id}`} className="text-ink underline underline-offset-2">{other.title}</Link>
+            {' '}({other.venue.name}), {assessment.gapMinutes} minutes apart.
+          </p>
+          <p className="mt-2 text-[13px] font-medium text-amber-200">{hopSummary(assessment)}</p>
+          <ul className="mt-2 space-y-1">
+            {assessment.options.map((o) => (
+              <li key={o.mode} className="flex items-baseline gap-2 text-[12px]">
+                <span className="w-20 shrink-0 font-medium text-ink">{o.mode}</span>
+                <span className="font-mono text-amber-200">{o.total} min</span>
+                <span className="text-faint">{o.costUsd ? `≈ $${o.costUsd.toFixed(2)}` : 'free'}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function TravelNotice({ session }) {
   const { venues, travel } = useConference();
@@ -271,6 +303,7 @@ export function SessionPage() {
 
         <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
           <TravelNotice session={session} />
+          <HopNotice session={session} />
 
           <SeatPanel session={session} />
 

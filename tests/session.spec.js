@@ -36,6 +36,42 @@ test.describe('Session detail', () => {
     await expect(page.getByTestId('travel-notice')).toContainText(/min/);
   });
 
+  test('two seats at different venues warn about the hop, on both sessions, until one is dropped', async ({ page, request }, testInfo) => {
+    const lane = await laneFor('session.hop', testInfo);
+    const free = await bookableFor(request, lane.user, lane.day);
+    const mins = (t) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+    const pair = free.flatMap((a) => free.filter((b) => a.venue.id !== b.venue.id && a.seatsLeft > 0 && b.seatsLeft > 0
+      && mins(b.startsAt) - mins(a.endsAt) === 30).map((b) => [a, b]))[0];
+    expect(pair, 'two bookable sessions 30 minutes apart at different venues').toBeTruthy();
+    const [first, second] = pair;
+    const booked = [];
+    try {
+      for (const s of pair) {
+        const res = await request.put(`${API}/users/${lane.user}/reservations/${s.id}`, { data: {} });
+        expect(res.ok()).toBeTruthy();
+        booked.push(s);
+      }
+      const at = await momentOn(0, '07:00');
+      const notice = page.getByTestId('getting-there');
+
+      await visit(page, `/sessions/${first.id}`, { as: lane.user, at });
+      await expect(notice).toContainText(second.title);
+      await expect(notice.getByRole('link', { name: second.title })).toHaveAttribute('href', `/sessions/${second.id}`);
+      await expect(notice).toContainText(/free shuttle works|free shuttle is too slow|will not make it/i);
+      await shotForPR(page, 'the getting-there notice between two venues');
+
+      await page.goto(`/sessions/${second.id}`);
+      await expect(notice).toContainText(first.title);
+
+      await page.getByTestId('save-session').click();
+      await expect(page.getByTestId('save-session')).toHaveText('Add to my agenda');
+      await expect(notice).toBeHidden();
+      booked.pop();
+    } finally {
+      for (const s of booked) await request.delete(`${API}/users/${lane.user}/reservations/${s.id}`);
+    }
+  });
+
   test('navigating from a session to its speaker works', async ({ page }) => {
     await visit(page, '/sessions/1');
     await page.getByRole('link', { name: /./ }).filter({ hasText: /Labs|Systems|AI|Research/ }).first().click();

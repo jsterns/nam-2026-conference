@@ -54,9 +54,15 @@ with different minutes; never assume symmetry.
   sessions (needs `.venue.id` and `to.room.walkMinutes`). Returns `null` if same
   venue or no route. Otherwise `{ gapMinutes, walk, options, fastest, free,
   impossible, freeTooSlow }`; each option gets `total = minutes + walk` and
-  `fits`. Excludes `Walk`. `free` = the first `costUsd === 0` option. No UI
-  calls it yet — it is there for an agenda view that warns about a cross-town
-  hop between two booked sessions; `tests/unit/travel.test.js` covers it.
+  `fits`. Excludes `Walk`. `free` = the first `costUsd === 0` option.
+- `travel.js:hopsFor({ session, schedule, travel, reservationFor })` — the
+  nearest confirmed seat before and after `session` that day (`schedule` is the
+  `/users/:id/schedule` payload), as `[{ direction: 'previous'|'next', other,
+  assessment }]`, only where the venue differs; `[]` unless `session` is itself
+  confirmed. `hopSummary(assessment)` is the one-sentence verdict (shuttle
+  works / too slow, cheapest paid option that fits / will not make it).
+  `SessionPage`'s `HopNotice` (`getting-there`) renders them;
+  `tests/unit/travel.test.js` covers it.
 
 **`VenuesPage`** — URL params `venue` (id; defaults to first = primary) and
 `day` (defaults to `clock.day`). Unlike other pages, `set()` never deletes a
