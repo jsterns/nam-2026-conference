@@ -47,7 +47,6 @@ export const MID_SESSION_TIME = '10:30';   // inside the 10:15 slot
 export async function visit(page, path = '/', { as = ATTENDEES.jonas, at = null } = {}) {
   await page.addInitScript(({ id, clockAt }) => {
     window.localStorage.setItem('orbit:currentUserId', String(id));
-    window.localStorage.setItem('orbit:welcomeSeen', '1');
     if (clockAt) window.localStorage.setItem('orbit:clockAt', clockAt);
     else window.localStorage.removeItem('orbit:clockAt');
   }, { id: as, clockAt: at });
@@ -124,8 +123,10 @@ export const LANES = {
   // read-only: it books nothing, and needs a day the seed sells sessions out on
   'schedule.seats':   { desktop: { user: kenji, day: 1, readOnly: true }, mobile: { user: marcus, day: 0, readOnly: true } },
   'session.add':      { desktop: { user: sofia, day: 0 },                 mobile: { user: andy, day: 0 } },
-  // Books two consecutive seats at different venues on day index 1, which no other lane uses for these attendees.
-  'session.hop':      { desktop: { user: abraham, day: 1 },               mobile: { user: andy, day: 1 } },
+  // Books two seats at different venues, 30 minutes apart, on day index 0. The pinned slot is the
+  // first of the pair, so the two projects book different pairs and no other lane's slot is touched
+  // (days 1 and 3 have every attendee taken; day 2's slots belong to the seat-count lanes).
+  'session.hop':      { desktop: { user: abraham, day: 0, slot: '14:45' }, mobile: { user: marcus, day: 0, slot: '16:00' } },
   // marcus/day 3 desktop and jonas/day 0 mobile are each used by no other lane,
   // so concurrent tests cannot collide on these attendee+day pairs.
   'switcher.live-count': { desktop: { user: marcus, day: 3 }, mobile: { user: jonas, day: 0, clean: true } },

@@ -24,31 +24,26 @@ test.describe('People', () => {
 
     await put(`/users/${lane.user}/role`, { role: 'seller' });
     await put(`/users/${lane.user}/tracks`, { trackSlugs: tracks });
-    // the seed has buyers who like each lane attendee, none of them first in the deck
-    const likers = { 5: [19, 21], 4: [17] }[lane.user];
+    // the seed's crowd likes every lane attendee, so each card in the deck is a match waiting to happen:
+    // pass the first, then like the second
     const { deck } = await deckOf(lane.user);
-    const liker = deck.find((c) => likers.includes(c.id));
-    const [first] = deck;
-    expect(liker, 'a buyer who already likes this attendee is in the deck').toBeTruthy();
-    expect(first.id).not.toBe(liker.id);
+    const [first, liker] = deck;
+    expect(liker, 'a second card in the deck').toBeTruthy();
 
     // the clock is pinned, so the coffee slot a match is offered does not depend on the hour
     await visit(page, '/people', { as: lane.user, at: await momentOn(0, '08:00') });
     await expect(page.getByTestId('people-card')).toContainText(first.name);
     await shotForPR(page, 'people deck');
 
-    // like someone who has not liked back: card gone, nothing under Matches
+    // pass the first card: it is gone, nothing under Matches, and it stays gone
     const matchesBefore = await page.getByTestId('match-item').count();
-    await page.getByTestId('people-like').click();
+    await page.getByTestId('people-pass').click();
     await expect(page.getByTestId('people-card')).not.toContainText(first.name);
     await expect(page.getByTestId('match-item')).toHaveCount(matchesBefore);
     await page.reload();
     await expect(page.getByTestId('people-card')).not.toContainText(first.name);
 
-    // pass everyone ahead of the liker, then like the liker: a match with no reload
-    for (const c of deck.filter((c) => c.id < liker.id && c.id !== first.id)) {
-      await put(`/users/${lane.user}/people/${c.id}`, { choice: 'pass' });
-    }
+    // like the next card, who likes back: a match with no reload
     await page.reload();
     await expect(page.getByTestId('people-card')).toContainText(liker.name);
     await page.getByTestId('people-like').click();

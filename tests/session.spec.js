@@ -40,7 +40,7 @@ test.describe('Session detail', () => {
     const lane = await laneFor('session.hop', testInfo);
     const free = await bookableFor(request, lane.user, lane.day);
     const mins = (t) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
-    const pair = free.flatMap((a) => free.filter((b) => a.venue.id !== b.venue.id && a.seatsLeft > 0 && b.seatsLeft > 0
+    const pair = free.filter((a) => a.startsAt === lane.slot).flatMap((a) => free.filter((b) => a.venue.id !== b.venue.id && a.seatsLeft > 0 && b.seatsLeft > 0
       && mins(b.startsAt) - mins(a.endsAt) === 30).map((b) => [a, b]))[0];
     expect(pair, 'two bookable sessions 30 minutes apart at different venues').toBeTruthy();
     const [first, second] = pair;

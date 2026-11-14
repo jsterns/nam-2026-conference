@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { API, conferenceDays, waitForResults, shotForPR, momentOn } from './helpers.js';
 
+test.use({ storageState: { cookies: [], origins: [] } });
+
 /**
  * The welcome dialog. Plain page.goto, not visit(): storage must start empty.
  * No seats are booked, so no data lane is needed.

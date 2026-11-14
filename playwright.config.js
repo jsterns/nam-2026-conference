@@ -50,6 +50,15 @@ export default defineConfig({
 
   use: {
     baseURL: `http://localhost:${process.env.WEB_PORT ?? 5173}`,
+    // Every spec starts with the welcome seen, so its backdrop never covers a click.
+    // welcome.spec.js opts out with test.use({ storageState: { cookies: [], origins: [] } }).
+    storageState: {
+      cookies: [],
+      origins: [{
+        origin: `http://localhost:${process.env.WEB_PORT ?? 5173}`,
+        localStorage: [{ name: 'orbit:welcomeSeen', value: '1' }],
+      }],
+    },
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'off',
