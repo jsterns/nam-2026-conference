@@ -30,6 +30,8 @@ files:
   - src/components/UserSwitcher.jsx
   - src/components/RouteChange.jsx
   - src/pages/HomePage.jsx
+  - src/pages/ProfilePage.jsx
+  - tests/profile.spec.js
   - src/pages/NotFoundPage.jsx
   - src/pages/PresentationPage.jsx
   - src/pages/ProductPresentationPage.jsx
@@ -148,6 +150,7 @@ was seen; `Layout` strips just that key via `takeLaunchParams()` so a reload doe
 - `NAV` array (`to, label, icon, end`) drives both the desktop nav (`lg+`,
   `aria-label="Main"`) and the mobile menu (`aria-label="Mobile"`, toggled by
   the "Open menu"/"Close menu" button, closes on navigation, locks body scroll).
+  It includes People (`/people`, `heart`; see `people.md`).
   `/my-agenda` shows `reservations.size` as a badge.
 - Footer: three `nav` columns (Programme, On site, Conference) built from an
   inline array of `[label, to]`, plus `conference.dates · conference.city` from
@@ -169,6 +172,16 @@ was seen; `Layout` strips just that key via `takeLaunchParams()` so a reload doe
   (`own-speaker-profile`) sits between the list and the talk links and opens
   `/speakers/<currentUser.speakerId>`, which marks itself "This is you"
   (speakers doc). `tests/switcher.spec.js` covers the switcher and that link.
+  The menu also always carries `own-profile`, a "Your profile" link to `/profile`.
+  `ProfilePage` first has a "Your role" section: radios `role-buyer` / `role-seller` loaded
+  from `getUser(currentUserId).role` (neither checked when null), `save-role` (disabled until
+  one differs from the saved role, via `api.setUserRole`), `role-saved` and `role-error`;
+  independent of the tracks below. It loads `getUser(currentUserId).trackSlugs` into checkboxes
+  (`track-<slug>`), `save-tracks` (disabled with `tracks-required` while none is ticked;
+  `tracks-saved` after a save), and lists `suggested-list` (`SessionCard` rows) from
+  `getSessions()` filtered by the *saved* slugs, `!hasEnded` and `!reservationFor`.
+  Seat, waitlist and clash all come from the store, which is why a taken session
+  leaves the list at once. `suggested-empty` shows when nothing is saved or left.
 
 **`HomePage`** (`/`) — static: nothing on it is about the signed-in attendee or
 what is live. It stacks `HeroBar` (`hero`: name, `conference.dates · city`, a

@@ -36,6 +36,8 @@ CREATE TABLE IF NOT EXISTS users (
   timezone    TEXT NOT NULL DEFAULT 'America/Los_Angeles',
   ticket_tier TEXT NOT NULL DEFAULT 'Standard',
   interests   TEXT NOT NULL DEFAULT '',
+  -- Chosen on the profile page; NULL until they pick one.
+  role        TEXT CHECK (role IN ('buyer', 'seller')),
   -- Attendees who are also presenting link to their speakers row.
   speaker_id  INTEGER REFERENCES speakers(id)
 );
@@ -195,6 +197,32 @@ CREATE TABLE IF NOT EXISTS speaker_follows (
   PRIMARY KEY (user_id, speaker_id)
 );
 
+-- the tracks an attendee picked on their profile; the seed leaves it empty
+CREATE TABLE IF NOT EXISTS user_tracks (
+  user_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  track_id INTEGER NOT NULL REFERENCES tracks(id),
+  PRIMARY KEY (user_id, track_id)
+);
+
+-- a pass or a like on the People deck; the first choice stands, so there is no undo
+CREATE TABLE IF NOT EXISTS people_decisions (
+  user_id   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  target_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  choice    TEXT NOT NULL CHECK (choice IN ('like', 'pass')),
+  PRIMARY KEY (user_id, target_id)
+);
+
+-- the coffee invite fixed when two attendees match, one row per pair (user_a < user_b);
+-- day and starts_at are NULL when the pair had no free slot left in common
+CREATE TABLE IF NOT EXISTS match_invites (
+  user_a    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_b    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  message   TEXT NOT NULL,
+  day       TEXT,
+  starts_at TEXT,
+  PRIMARY KEY (user_a, user_b)
+);
+
 CREATE TABLE IF NOT EXISTS ratings (
   id         INTEGER PRIMARY KEY,
   user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -269,6 +297,9 @@ export function dropAll() {
     DROP TABLE IF EXISTS ratings;
     DROP TABLE IF EXISTS check_ins;
     DROP TABLE IF EXISTS reservations;
+    DROP TABLE IF EXISTS match_invites;
+    DROP TABLE IF EXISTS people_decisions;
+    DROP TABLE IF EXISTS user_tracks;
     DROP TABLE IF EXISTS speaker_follows;
     DROP TABLE IF EXISTS session_tags;
     DROP TABLE IF EXISTS session_speakers;

@@ -192,12 +192,16 @@ export const toUser = (row, extra = {}) => ({
   initials: row.initials, accent: row.accent, imageUrl: row.image_url, bio: row.bio, pronouns: row.pronouns,
   homeCity: row.home_city, timezone: row.timezone, ticketTier: row.ticket_tier,
   interests: row.interests ? row.interests.split(',').filter(Boolean) : [],
+  role: row.role ?? null,
   speakerId: row.speaker_id ?? null,
   isSpeaker: !!row.speaker_id,
   ...extra,
 });
 
-export const toAnnouncement = (row) => ({
+/** A match's coffee invite; `day` and `startsAt` are null when no time was available. */
+export const toInvite = (row) => ({ message: row.message, day: row.day ?? null, startsAt: row.starts_at ?? null });
+
+export const toAnnouncement =(row) => ({
   id: row.id, title: row.title, body: row.body, kind: row.kind,
   venueId: row.venue_id, postedAt: row.posted_at, pinned: !!row.pinned,
 });

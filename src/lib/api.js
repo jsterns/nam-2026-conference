@@ -60,5 +60,12 @@ export const rateSession = (userId, sessionId, payload) =>
 export const agendaCalendarUrl = (userId) => `/api/users/${userId}/agenda.ics`;
 export const sessionCalendarUrl = (sessionId) => `/api/sessions/${sessionId}.ics`;
 
+export const setUserTracks = (userId, trackSlugs) =>
+  api(`/users/${userId}/tracks`, { method: 'PUT', body: JSON.stringify({ trackSlugs }) });
+export const setUserRole = (userId, role) =>
+  api(`/users/${userId}/role`, { method: 'PUT', body: JSON.stringify({ role }) });
+export const getPeople = (userId) => api(`/users/${userId}/people`);
+export const decidePerson = (userId, targetId, choice, now) =>
+  api(`/users/${userId}/people/${targetId}`, { method: 'PUT', body: JSON.stringify({ choice, ...now }) });
 export const followSpeaker = (userId, speakerId) => api(`/users/${userId}/follows/${speakerId}`, { method: 'PUT' });
 export const unfollowSpeaker = (userId, speakerId) => api(`/users/${userId}/follows/${speakerId}`, { method: 'DELETE' });
