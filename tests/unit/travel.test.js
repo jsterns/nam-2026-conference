@@ -114,7 +114,7 @@ describe('Hops between your own seats', () => {
   const sess = (id, venueId, startsAt, endsAt, day = '2026-01-01') =>
     ({ id, title: `Talk ${id}`, day, startsAt, endsAt, venue: { id: venueId }, room: { walkMinutes: 0 } });
   const held = (...ids) => (id) => (ids.includes(id) ? 'confirmed' : null);
-  const days = (...sessions) => [{ date: '2026-01-01', sessions }];
+  const days = (...sessions) => ({ days: [{ date: '2026-01-01', sessions }] });
 
   test('the lunch gap, 12:15 to 13:30, is long enough for the free shuttle', () => {
     const a = sess(1, AURORA, '11:00', '12:15');

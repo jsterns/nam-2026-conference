@@ -106,6 +106,9 @@ carry `data-testid="session-card"` and `data-done`; done (dimmed, seat button
 also import from it.
 
 **`SessionPage`** (`session-detail`) fetches `api.getSession(id, currentUserId)`.
+Its sidebar also shows `HopNotice` (`getting-there`): when you hold this seat and
+the adjacent one at another venue, it names that session and says whether the
+hop works (see `venues.md`); it refetches `getSchedule` when `reservations` change.
 An unknown id (the fetch's `error.status === 404`) renders `NotFoundState`
 ("Session not found", back to `/schedule`) instead of `ErrorState` — a 404 can
 never succeed on retry; any other failure still shows `ErrorState` with "Try

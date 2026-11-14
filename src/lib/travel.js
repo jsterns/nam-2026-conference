@@ -43,3 +43,45 @@ export function assessTravel({ travel, from, to, gapMinutes }) {
     freeTooSlow: Boolean(free && !free.fits && options.some((o) => o.fits)),
   };
 }
+
+const mins = (hhmm) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5));
+
+/**
+ * The hops between this session and the confirmed seats right next to it that
+ * day, one per direction, only where the venue changes. `schedule` is the
+ * `/users/:id/schedule` payload (`{ days }`); `reservationFor` is the
+ * store's, so a seat dropped on the page drops its hop at once. Only the
+ * nearest neighbour counts, and you must hold this session too.
+ */
+export function hopsFor({ session, schedule, travel, reservationFor }) {
+  if (reservationFor(session.id) !== 'confirmed') return [];
+  const mine = (schedule?.days ?? []).flatMap((d) => d.sessions)
+    .filter((s) => s.id !== session.id && s.day === session.day && reservationFor(s.id) === 'confirmed');
+  const before = mine.filter((s) => mins(s.endsAt) <= mins(session.startsAt))
+    .sort((a, b) => mins(b.endsAt) - mins(a.endsAt))[0];
+  const after = mine.filter((s) => mins(s.startsAt) >= mins(session.endsAt))
+    .sort((a, b) => mins(a.startsAt) - mins(b.startsAt))[0];
+
+  return [
+    before && { direction: 'previous', other: before, from: before, to: session, gap: mins(session.startsAt) - mins(before.endsAt) },
+    after && { direction: 'next', other: after, from: session, to: after, gap: mins(after.startsAt) - mins(session.endsAt) },
+  ].filter(Boolean)
+    .map(({ direction, other, from, to, gap }) => ({ direction, other, assessment: assessTravel({ travel, from, to, gapMinutes: gap }) }))
+    .filter((h) => h.assessment);
+}
+
+const cost = (o) => (o.costUsd ? `$${o.costUsd.toFixed(2)}` : 'free');
+
+/** One plain sentence on whether the hop works. */
+export function hopSummary(a) {
+  if (a.impossible) {
+    return `You will not make it in time: nothing gets you there in ${a.gapMinutes} minutes.`;
+  }
+  if (a.freeTooSlow) {
+    const paid = a.options.filter((o) => o.fits).sort((x, y) => x.costUsd - y.costUsd || x.total - y.total)[0];
+    return `The free shuttle is too slow for ${a.gapMinutes} minutes. ${paid.mode} fits (${paid.total} min, ${cost(paid)}).`;
+  }
+  if (a.free?.fits) return `The free shuttle works: ${a.free.total} minutes in a ${a.gapMinutes}-minute gap.`;
+  const best = a.options.find((o) => o.fits);
+  return `${best.mode} fits (${best.total} min, ${cost(best)}).`;
+}
