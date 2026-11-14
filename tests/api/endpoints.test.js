@@ -199,3 +199,20 @@ describe('Every endpoint answers', () => {
     assert.deepEqual(missing, [], `untested endpoints: ${missing.join(', ')}`);
   });
 });
+
+describe('Sessions filtered by several tracks', () => {
+  test('trackSlug=a,b is the union of a and b, and one slug is unchanged', async () => {
+    const boot = await api.json('/bootstrap');
+    const [a, b] = boot.tracks.map((t) => t.slug);
+    const onlyA = await api.json(`/sessions?trackSlug=${a}`);
+    const onlyB = await api.json(`/sessions?trackSlug=${b}`);
+    const both = await api.json(`/sessions?trackSlug=${a},${b}`);
+    assert.ok(onlyA.length > 0 && onlyB.length > 0);
+    assert.deepEqual(
+      both.map((s) => s.id).sort(),
+      [...onlyA, ...onlyB].map((s) => s.id).sort(),
+    );
+    const stray = await api.json(`/sessions?trackSlug=${a},`);
+    assert.equal(stray.length, onlyA.length);
+  });
+});

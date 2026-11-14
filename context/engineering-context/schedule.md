@@ -29,7 +29,7 @@ and a bound `?` to `args`:
 | param | clause |
 | --- | --- |
 | `day` | `s.day = ?` |
-| `trackSlug` | `t.slug = ?` |
+| `trackSlug` (comma-separated) | `t.slug IN (?, …)` |
 | `venueId` / `roomId` | `v.id = ?` / `r.id = ?` |
 | `level` / `format` | `s.level = ?` / `s.format = ?` |
 | `q` | `LIKE %q%` on title, abstract, subtitle, or any speaker name (`EXISTS`) |
@@ -69,7 +69,7 @@ The list groups sessions by `startsAt` into `slot-<HH:MM>` sections of
 `SessionCard`s in a `grid-flow-row-dense` auto-fit grid. The filter rail
 (`aside`, hidden below `lg` until the Filters button toggles `railOpen`) holds
 `search-input`, `starred-count` (= `reservations.size`, the agenda count), day
-buttons `tab-<date>`, track pills, and `Select`s for venue/level/format/topic.
+buttons `tab-<date>`, track pills (multi-select, each `aria-pressed`; All is pressed when none is), and `Select`s for venue/level/format/topic.
 Below `lg` the open rail is compact so the first card stays in view at 393×659: days in one
 row (no weekday or count), tracks in one scrolling row (the Day and Track headings turn screen-reader-only), selects in two columns, and the
 My agenda card is desktop-only (`starred-count` stays in the DOM, `hidden lg:block`);
