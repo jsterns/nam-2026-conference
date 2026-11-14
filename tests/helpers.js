@@ -123,6 +123,8 @@ export const LANES = {
   // read-only: it books nothing, and needs a day the seed sells sessions out on
   'schedule.seats':   { desktop: { user: kenji, day: 1, readOnly: true }, mobile: { user: marcus, day: 0, readOnly: true } },
   'session.add':      { desktop: { user: sofia, day: 0 },                 mobile: { user: andy, day: 0 } },
+  // Books two consecutive seats at different venues on day index 1, which no other lane uses for these attendees.
+  'session.hop':      { desktop: { user: abraham, day: 1 },               mobile: { user: andy, day: 1 } },
   // marcus/day 3 desktop and jonas/day 0 mobile are each used by no other lane,
   // so concurrent tests cannot collide on these attendee+day pairs.
   'switcher.live-count': { desktop: { user: marcus, day: 3 }, mobile: { user: jonas, day: 0, clean: true } },

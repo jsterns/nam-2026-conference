@@ -1,6 +1,6 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { routesBetween, assessTravel } from '../../src/lib/travel.js';
+import { routesBetween, assessTravel, hopsFor, hopSummary } from '../../src/lib/travel.js';
 
 const AURORA = 1;
 const FOUNDRY = 2;
@@ -107,5 +107,68 @@ describe('Whether you can make the next session', () => {
   test('venues with only a walking leg between them offer no advice', () => {
     const walkOnly = travel.filter((t) => t.mode === 'Walk');
     assert.equal(assessTravel({ travel: walkOnly, from: at(AURORA), to: at(FOUNDRY), gapMinutes: 300 }), null);
+  });
+});
+
+describe('Hops between your own seats', () => {
+  const sess = (id, venueId, startsAt, endsAt, day = '2026-01-01') =>
+    ({ id, title: `Talk ${id}`, day, startsAt, endsAt, venue: { id: venueId }, room: { walkMinutes: 0 } });
+  const held = (...ids) => (id) => (ids.includes(id) ? 'confirmed' : null);
+  const days = (...sessions) => [{ date: '2026-01-01', sessions }];
+
+  test('the lunch gap, 12:15 to 13:30, is long enough for the free shuttle', () => {
+    const a = sess(1, AURORA, '11:00', '12:15');
+    const b = sess(2, FOUNDRY, '13:30', '14:30');
+    const [hop] = hopsFor({ session: a, schedule: days(a, b), travel, reservationFor: held(1, 2) });
+    assert.equal(hop.direction, 'next');
+    assert.equal(hop.other.id, 2);
+    assert.equal(hop.assessment.gapMinutes, 75);
+    assert.ok(hop.assessment.free.fits);
+    assert.match(hopSummary(hop.assessment), /free shuttle works/i);
+  });
+
+  test('both sides name the other session', () => {
+    const a = sess(1, AURORA, '10:15', '11:00');
+    const b = sess(2, FOUNDRY, '11:30', '12:15');
+    const schedule = days(a, b);
+    const fromB = hopsFor({ session: b, schedule, travel, reservationFor: held(1, 2) });
+    assert.deepEqual(fromB.map((h) => [h.direction, h.other.id]), [['previous', 1]]);
+    assert.equal(fromB[0].assessment.gapMinutes, 30);
+  });
+
+  test('same venue gives no hop', () => {
+    const a = sess(1, AURORA, '10:15', '11:00');
+    const b = sess(2, AURORA, '11:30', '12:15');
+    assert.deepEqual(hopsFor({ session: a, schedule: days(a, b), travel, reservationFor: held(1, 2) }), []);
+  });
+
+  test('waitlisted, unheld, or other-day neighbours do not count; the nearest one wins', () => {
+    const a = sess(1, AURORA, '10:15', '11:00');
+    const wait = sess(2, FOUNDRY, '11:30', '12:15');
+    const other = sess(3, FOUNDRY, '11:30', '12:15', '2026-01-02');
+    const reservationFor = (id) => ({ 1: 'confirmed', 2: 'waitlisted', 3: 'confirmed' })[id] ?? null;
+    assert.deepEqual(hopsFor({ session: a, schedule: days(a, wait, other), travel, reservationFor }), []);
+    const near = sess(4, AURORA, '11:15', '12:00');
+    const far = sess(5, FOUNDRY, '12:30', '13:15');
+    assert.deepEqual(hopsFor({ session: a, schedule: days(a, near, far), travel, reservationFor: held(1, 4, 5) }), []);
+  });
+
+  test('you must hold the page\'s own session too', () => {
+    const a = sess(1, AURORA, '10:15', '11:00');
+    const b = sess(2, FOUNDRY, '11:30', '12:15');
+    assert.deepEqual(hopsFor({ session: a, schedule: days(a, b), travel, reservationFor: held(2) }), []);
+  });
+
+  test('when nothing fits it says you will not make it', () => {
+    const a = assessTravel({ travel, from: at(AURORA), to: at(FOUNDRY), gapMinutes: 5 });
+    assert.match(hopSummary(a), /will not make it/i);
+  });
+
+  test('when only paid options fit it says the shuttle is too slow and names the cheapest that fits, with cost', () => {
+    const a = assessTravel({ travel, from: at(AURORA), to: at(FOUNDRY), gapMinutes: 20 });
+    const text = hopSummary(a);
+    assert.match(text, /free shuttle is too slow/i);
+    assert.match(text, /Rideshare/);
+    assert.match(text, /\$18/);
   });
 });
