@@ -90,6 +90,19 @@ pins it. Only dates change between machines; the PRNG output does not.
 | 5 | Marcus Whitfield | Standard | 2 days, the smallest plan |
 | 6 | Abraham Marín Pérez | Speaker | `speaker_id` 2, presents 2 sessions, 3 days |
 
+**The mock crowd** — ids 7 to 36, the hand-written `CROWD` array, inserted after the
+announcements so nothing above shifts and the `users` const (read before them) never
+includes them. Each is Standard tier at an `@example.com` address and a company other than
+Equal Experts (which keeps them out of the attendee switcher), has no portrait (generated
+avatar), alternating `buyer`/`seller` roles, two to four `user_tracks` and topic-tag
+interests, and holds no waitlist place, follow or rating. Every track has at least three
+buyers and three sellers. The six above keep no role and no tracks. `tests/api/seed.test.js`
+holds all of it. A loop then seeds `people_decisions`: every crowd member likes each of users
+1 to 6 (see `people.md`). Position `i` in `CROWD` gives role `i % 2` and seat group `i % 3`: the
+member holds a confirmed seat in every slot of the distinct `(day, starts_at)` list except those
+whose index is `i % 3` (in the session of that slot with most free seats, so no room fills),
+and is checked in to the Day 1 morning ones (`ends_at <= 12:15`).
+
 ## Invariants
 
 - Never `Math.random()` or `Date.now()`-dependent values other than `START_DATE`.
@@ -120,6 +133,8 @@ pins it. Only dates change between machines; the PRNG output does not.
   and rejects duplicates by SHA-1 (the source serves whatever it generated most recently,
   so concurrent requests come back identical — do not parallelise it); resizing uses macOS `sips` and keeps the full-size file
   elsewhere. `--force` re-downloads everything — which invalidates every presentation entry.
+- `users.length` is 36, not 6: the first six are the hand-written attendees (`ATTENDEES`),
+  the rest the mock crowd. Anything that walks every user must expect the crowd.
 - `sessions.seats_taken` is a seeded crowd size, not a count of `reservations` rows — the
   six attendees are a tiny share of it, and step 9 overwrites it outright. Never assert
   `seats_taken == COUNT(reservations)`.

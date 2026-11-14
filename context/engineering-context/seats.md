@@ -10,6 +10,8 @@ files:
 tests:
   - tests/api/seats.test.js
   - tests/api/overlap.test.js
+  - tests/api/tracks.test.js
+  - tests/api/role.test.js
   - tests/seats.spec.js
 related: [attendance, agenda, clock, architecture, testing]
 ---
@@ -58,7 +60,10 @@ status 'confirmed'|'waitlisted', created_at)` and the counter
 
 The same file also owns routes from other areas — change them here, but the
 logic lives elsewhere: `GET /` and `GET /:id` (the user plus `followedSpeakers`,
-`speaker`, `speakingSessions`, `reservations`, `checkIns`, `ratings`);
+`speaker`, `speakingSessions`, `reservations`, `checkIns`, `ratings`, `trackSlugs`);
+`PUT /:id/tracks` `{ trackSlugs }` replaces the attendee's `user_tracks` in one transaction
+(400 for an empty list, a non-array or an unknown slug; 404 unknown attendee; returns
+`{ trackSlugs }` in track order, client `api.setUserTracks`);
 `GET /:id/agenda.ics` (`lib/ical.js:agendaCalendar`); `GET /:id/today` and
 `GET /:id/schedule` (`lib/agenda.js:todayFor`/`scheduleFor`, see the agenda
 doc); attendance, check-in and rating routes (see the attendance doc); and

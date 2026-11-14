@@ -3,6 +3,7 @@ import { db } from '../db.js';
 import { SESSION_SELECT, toUser, toSpeaker, toSession } from '../lib/query.js';
 import { reserveSeat, releaseSeat, seatState } from '../lib/seats.js';
 import { attendanceState, checkIn, rateSession } from '../lib/attendance.js';
+import { deckFor, matchesFor, decide, isReady } from '../lib/people.js';
 import { todayFor, scheduleFor } from '../lib/agenda.js';
 import { agendaCalendar, baseUrlFor } from '../lib/ical.js';
 
@@ -22,6 +23,13 @@ const presenting = db.prepare(`${SESSION_SELECT}
 const myReservations = db.prepare('SELECT session_id, status FROM reservations WHERE user_id = ?');
 const myCheckIns = db.prepare('SELECT session_id FROM check_ins WHERE user_id = ?');
 const myRatings = db.prepare('SELECT session_id, stars FROM ratings WHERE user_id = ?');
+const myTrackSlugs = db.prepare(`
+  SELECT t.slug FROM user_tracks ut JOIN tracks t ON t.id = ut.track_id
+  WHERE ut.user_id = ? ORDER BY t.id`);
+const trackIdBySlug = db.prepare('SELECT id FROM tracks WHERE slug = ?');
+const clearTracks = db.prepare('DELETE FROM user_tracks WHERE user_id = ?');
+const addTrack = db.prepare('INSERT INTO user_tracks (user_id, track_id) VALUES (?, ?)');
+const setRole = db.prepare('UPDATE users SET role = ? WHERE id = ?');
 const follow = db.prepare('INSERT OR IGNORE INTO speaker_follows (user_id, speaker_id) VALUES (?, ?)');
 const unfollow = db.prepare('DELETE FROM speaker_follows WHERE user_id = ? AND speaker_id = ?');
 
@@ -44,7 +52,77 @@ usersRouter.get('/:id', (req, res) => {
     reservations: myReservations.all(row.id).map((r) => ({ sessionId: r.session_id, status: r.status })),
     checkIns: myCheckIns.all(row.id).map((c) => c.session_id),
     ratings: myRatings.all(row.id).map((r) => ({ sessionId: r.session_id, stars: r.stars })),
+    trackSlugs: myTrackSlugs.all(row.id).map((t) => t.slug),
   }));
+});
+
+const replaceTracks = db.transaction((userId, trackIds) => {
+  clearTracks.run(userId);
+  for (const id of trackIds) addTrack.run(userId, id);
+});
+
+/**
+ * PUT /api/users/:id/tracks  { trackSlugs }
+ * Replaces the tracks this attendee picked. At least one is needed, and every
+ * slug must name a track.
+ */
+usersRouter.put('/:id/tracks', (req, res) => {
+  if (!userExists.get(req.params.id)) return res.status(404).json({ error: 'Attendee not found' });
+  const { trackSlugs } = req.body ?? {};
+  if (!Array.isArray(trackSlugs) || trackSlugs.length === 0) {
+    return res.status(400).json({ error: 'Choose at least one track' });
+  }
+  const ids = trackSlugs.map((slug) => trackIdBySlug.get(String(slug))?.id);
+  if (ids.some((id) => id === undefined)) return res.status(400).json({ error: 'Unknown track' });
+
+  const userId = Number(req.params.id);
+  replaceTracks(userId, [...new Set(ids)]);
+  res.json({ trackSlugs: myTrackSlugs.all(userId).map((t) => t.slug) });
+});
+
+/**
+ * PUT /api/users/:id/role  { role }
+ * Stores whether the attendee is a buyer or a seller. Anything else is refused.
+ */
+usersRouter.put('/:id/role', (req, res) => {
+  if (!userExists.get(req.params.id)) return res.status(404).json({ error: 'Attendee not found' });
+  const { role } = req.body ?? {};
+  if (role !== 'buyer' && role !== 'seller') {
+    return res.status(400).json({ error: 'Role must be buyer or seller' });
+  }
+  setRole.run(role, req.params.id);
+  res.json({ role });
+});
+
+/**
+ * GET /api/users/:id/people
+ * The deck (opposite role, a shared track, nobody already decided) and the matches.
+ * `ready` is false without a role or a saved track, and the deck is then empty.
+ */
+usersRouter.get('/:id/people', (req, res) => {
+  const row = getUser.get(req.params.id);
+  if (!row) return res.status(404).json({ error: 'Attendee not found' });
+  res.json({ ready: isReady(row), deck: deckFor(row.id), matches: matchesFor(row.id) });
+});
+
+/**
+ * PUT /api/users/:id/people/:targetId  { choice: 'like' | 'pass', day?, time? }
+ * The first decision stands; a repeat answers with it and changes nothing. A like that
+ * makes a match also answers with its coffee invite, picked from the clock in `day`/`time`.
+ */
+usersRouter.put('/:id/people/:targetId', (req, res) => {
+  if (!userExists.get(req.params.id) || !userExists.get(req.params.targetId)) {
+    return res.status(404).json({ error: 'Attendee not found' });
+  }
+  const { choice } = req.body ?? {};
+  if (choice !== 'like' && choice !== 'pass') {
+    return res.status(400).json({ error: 'Choice must be like or pass' });
+  }
+  if (Number(req.params.id) === Number(req.params.targetId)) {
+    return res.status(400).json({ error: 'You cannot decide on yourself' });
+  }
+  res.json(decide(Number(req.params.id), Number(req.params.targetId), choice,
+    { day: req.body?.day, time: req.body?.time }));
 });
 
 /** A subscribable feed of everything this attendee holds a seat for. */

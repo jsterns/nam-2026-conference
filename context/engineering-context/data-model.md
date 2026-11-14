@@ -33,6 +33,9 @@ Approximate counts from a fresh seed. The tables attendees write to drift as you
 | `users` | 6 | Attendees. No passwords — there is no auth |
 | `reservations` | ~60 | An attendee's agenda. Holds a real seat; `status` is `confirmed` or `waitlisted` |
 | `speaker_follows` | ~20 | Follow button on a speaker's profile; only the speaker pages read it |
+| `user_tracks` | 0, grows | The tracks an attendee picked on `/profile`, `(user_id, track_id)`. The seed writes none; a saved selection is never empty |
+| `people_decisions` | 18, grows | A pass or like on the People deck, `(user_id, target_id, choice)`; the first choice stands. The seed writes eighteen likes on users 1 to 6 |
+| `match_invites` | 0, grows | The coffee invite fixed when two attendees match, `(user_a, user_b)` with `user_a < user_b`, plus `message`, and `day`/`starts_at` (both NULL when no time was available). Written once, never recalculated |
 | `ratings` | ~10 | Only submittable by someone who checked in, once the session is over |
 | `check_ins` | ~10, grows | Proof of attendance; gates rating. Seeded only for Day 1's morning |
 | `vendors` | 24 | Food and drink at both venues, with opening hours and wait times |
@@ -76,6 +79,8 @@ venues ──< rooms ──< sessions >── tracks
                         └──< ratings >─────────── users
 
 users ──< speaker_follows >── speakers
+users ──< user_tracks >── tracks
+users ──< people_decisions >── users
 
 users.speaker_id ──> speakers.id     (set for attendees who are also presenting)
 venues ──< vendors, sponsors, announcements
@@ -104,7 +109,9 @@ a deterministic generated SVG portrait (`src/components/GeneratedAvatar.jsx`).
 the seed derives it from the ratings on that speaker's sessions, so most
 speakers start at 0.
 
-**`users`** — `speaker_id` links an attendee to their speaker profile. When set,
+**`users`** — `role` is `'buyer'`, `'seller'` or NULL (nobody has one on a fresh seed; a
+CHECK refuses anything else), set by `PUT /api/users/:id/role` and returned as `role` by
+`toUser`. `speaker_id` links an attendee to their speaker profile. When set,
 `GET /api/users/:id` returns `isSpeaker: true`, a `speaker` object and
 `speakingSessions`. The UI uses `isSpeaker` to offer "Your speaker profile" in
 the attendee menu and `speakerId` to link it and mark that profile as yours;

@@ -139,6 +139,8 @@ print a markdown table to `$GITHUB_STEP_SUMMARY` and exit 0 even with no report.
   lane per test per project, released or cleared afterwards. Desktop and mobile run at
   the same time, so a new entry's `user`+`day` must be unique across **every** `desktop`
   and `mobile` value in the whole `LANES` table, not just within its own row or project.
+  A test that switches attendee and back through the switcher needs an Equal Experts
+  attendee (Jonas, Andy or Abraham): the switcher lists only those, plus whoever is current.
 - `lane 0` must still set `ORBIT_LANE` truthy (`'0'` as a string) — `lane.test.js` pins it.
 - A lane never exports `ORBIT_DB`; each worktree seeds its own `data/orbit.db`.
 
