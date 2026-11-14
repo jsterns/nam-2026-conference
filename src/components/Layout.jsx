@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useConference } from '../lib/store.jsx';
 import { UserSwitcher } from './UserSwitcher.jsx';
@@ -6,7 +6,7 @@ import { RouteChange } from './RouteChange.jsx';
 import { ConflictDialog } from './ConflictDialog.jsx';
 import { WelcomeDialog } from './WelcomeDialog.jsx';
 import { Tour } from './Tour.jsx';
-import { hasSeenWelcome, markWelcomeSeen, newEntries, tourSteps } from '../lib/welcome.js';
+import { hasSeenWelcome, markWelcomeSeen, newEntries, tourSteps, takeLaunchParams } from '../lib/welcome.js';
 import { Icon } from './Icon.jsx';
 import { cx } from './ui.jsx';
 
@@ -42,8 +42,20 @@ export function Layout() {
   const location = useLocation();
 
   // A first-time visitor gets the welcome once the app has loaded.
-  useEffect(() => { if (ready && !hasSeenWelcome()) setWelcomeOpen(true); }, [ready]);
+  // `?welcome` / `?tour` force one open whatever was seen, then leave the address bar.
+  const launched = useRef(false);
   const [tour, setTour] = useState(null);
+  useEffect(() => {
+    if (!ready || launched.current) return;
+    launched.current = true;
+    const { welcome, tour: wantTour, search } = takeLaunchParams(window.location.search);
+    if (wantTour) { markWelcomeSeen(); setTour(tourSteps(newEntries(), { days })); }
+    else if (welcome || !hasSeenWelcome()) setWelcomeOpen(true);
+    if (welcome || wantTour) {
+      const { pathname, hash } = window.location;
+      window.history.replaceState(window.history.state, '', pathname + search + hash);
+    }
+  }, [ready]); // eslint-disable-line react-hooks/exhaustive-deps
   const closeWelcome = () => { markWelcomeSeen(); setWelcomeOpen(false); };
 
   useEffect(() => { setMenuOpen(false); }, [location.pathname]);

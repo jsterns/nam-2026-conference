@@ -141,7 +141,8 @@ sticky `glass` header, `<main id="main">`, and the footer. It also owns the
 first-visit `<WelcomeDialog>` (`welcome-dialog`, one `welcome-try-<id>` link per entry): it
 opens once `ready` when `hasSeenWelcome()` is false, every dismissal calls `markWelcomeSeen()`
 (`orbit:welcomeSeen`, try/catch so blocked storage just reopens it each visit), and the footer
-**What's new** button reopens it. Entries live in `src/lib/welcome.js` (`WELCOME_ENTRIES`,
+**What's new** button reopens it. `?welcome` opens it and `?tour` starts the tour (marking it seen) whatever
+was seen; `Layout` strips just that key via `takeLaunchParams()` so a reload does not repeat it. Entries live in `src/lib/welcome.js` (`WELCOME_ENTRIES`,
 `newEntries()`, `welcomeHref()`); a link needing a date takes a function, never a literal.
 
 - `NAV` array (`to, label, icon, end`) drives both the desktop nav (`lg+`,

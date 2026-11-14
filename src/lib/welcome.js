@@ -55,3 +55,17 @@ export function hasSeenWelcome() {
 export function markWelcomeSeen() {
   try { globalThis.localStorage?.setItem(KEY, '1'); } catch { /* storage unavailable: it just opens next visit */ }
 }
+
+/**
+ * `?welcome` / `?tour` launch links: whether each key is present (any value) and
+ * the query string with just those two removed, every other key untouched.
+ */
+export function takeLaunchParams(search = '') {
+  const params = new URLSearchParams(search);
+  const welcome = params.has('welcome');
+  const tour = params.has('tour');
+  params.delete('welcome');
+  params.delete('tour');
+  const rest = params.toString();
+  return { welcome, tour, search: rest ? `?${rest}` : '' };
+}
