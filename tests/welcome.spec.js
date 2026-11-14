@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { API, conferenceDays, waitForResults, shotForPR } from './helpers.js';
+import { API, conferenceDays, waitForResults, shotForPR, momentOn } from './helpers.js';
 
 /**
  * The welcome dialog. Plain page.goto, not visit(): storage must start empty.
@@ -59,4 +59,32 @@ test('welcome opens once, lists what is new, and its Try it links land', async (
   const later = day.filter((x) => x.startsAt >= s.endsAt).map((x) => x.startsAt).sort();
   const nextSlot = later[0];
   expect(day.some((x) => x.startsAt === nextSlot && /Aurora/.test(x.venue.name))).toBe(true);
+});
+
+test('?welcome and ?tour open them for a visitor who has seen the welcome', async ({ page }) => {
+  await page.addInitScript(() => window.localStorage.setItem('orbit:welcomeSeen', '1'));
+  const dialog = page.getByTestId('welcome-dialog');
+
+  await page.goto('/?welcome');
+  await expect(dialog).toBeVisible();
+  await expect(page).not.toHaveURL(/welcome/);
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await page.reload();
+  await expect(page.getByRole('banner')).toBeVisible();
+  await expect(dialog).toBeHidden();
+
+  // The pinned clock survives alongside it.
+  const at = await momentOn(0, '10:00');
+  await page.goto(`/?at=${at}&welcome`);
+  await expect(dialog).toBeVisible();
+  expect(new URL(page.url()).searchParams.get('at')).toBe(at);
+  expect(new URL(page.url()).searchParams.has('welcome')).toBe(false);
+  await page.keyboard.press('Escape');
+
+  await page.goto('/schedule?tour');
+  await expect(page.getByTestId('tour-callout')).toContainText('1 of 2');
+  await expect(dialog).toBeHidden();
+  await expect(page).not.toHaveURL(/tour/);
+  await shotForPR(page, 'the tour started from a link');
 });

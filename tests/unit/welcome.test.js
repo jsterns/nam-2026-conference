@@ -1,7 +1,7 @@
 import { describe, test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  WELCOME_ENTRIES, newEntries, welcomeHref, hasSeenWelcome, markWelcomeSeen,
+  WELCOME_ENTRIES, newEntries, welcomeHref, hasSeenWelcome, markWelcomeSeen, takeLaunchParams,
 } from '../../src/lib/welcome.js';
 
 const days = [{ date: '2031-01-05' }, { date: '2031-01-06' }, { date: '2031-01-07' }];
@@ -48,5 +48,18 @@ describe('Seen flag', () => {
     globalThis.localStorage = { getItem: boom, setItem: boom };
     assert.equal(hasSeenWelcome(), false);
     assert.doesNotThrow(() => markWelcomeSeen());
+  });
+});
+
+describe('takeLaunchParams', () => {
+  test('reports neither and leaves the search alone', () => {
+    assert.deepEqual(takeLaunchParams(''), { welcome: false, tour: false, search: '' });
+    assert.deepEqual(takeLaunchParams('?at=x'), { welcome: false, tour: false, search: '?at=x' });
+  });
+
+  test('takes welcome and tour with or without a value, keeping other keys', () => {
+    assert.deepEqual(takeLaunchParams('?at=x&welcome=1&tour'), { welcome: true, tour: true, search: '?at=x' });
+    assert.deepEqual(takeLaunchParams('?tour'), { welcome: false, tour: true, search: '' });
+    assert.deepEqual(takeLaunchParams('?welcome'), { welcome: true, tour: false, search: '' });
   });
 });
