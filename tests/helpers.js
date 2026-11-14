@@ -123,10 +123,11 @@ export const LANES = {
   // read-only: it books nothing, and needs a day the seed sells sessions out on
   'schedule.seats':   { desktop: { user: kenji, day: 1, readOnly: true }, mobile: { user: marcus, day: 0, readOnly: true } },
   'session.add':      { desktop: { user: sofia, day: 0 },                 mobile: { user: andy, day: 0 } },
-  // Books two seats at different venues, 30 minutes apart, on day index 0. The pinned slot is the
-  // first of the pair, so the two projects book different pairs and no other lane's slot is touched
-  // (days 1 and 3 have every attendee taken; day 2's slots belong to the seat-count lanes).
-  'session.hop':      { desktop: { user: abraham, day: 0, slot: '14:45' }, mobile: { user: marcus, day: 0, slot: '16:00' } },
+  // Books two seats at different venues, 30 minutes apart, starting at the pinned slot. Both panes are
+  // Marcus's: day 0 holds only pinned or read-only lanes for him, and day 2's one other lane (people.deck)
+  // books nothing. Day 2's slots are the seat-count lanes' (other attendees, other sessions), so the
+  // test takes the LAST session of its slot, never the first one those lanes `find`.
+  'session.hop':      { desktop: { user: marcus, day: 0, slot: '16:00' }, mobile: { user: marcus, day: 2, slot: '16:00' } },
   // marcus/day 3 desktop and jonas/day 0 mobile are each used by no other lane,
   // so concurrent tests cannot collide on these attendee+day pairs.
   'switcher.live-count': { desktop: { user: marcus, day: 3 }, mobile: { user: jonas, day: 0, clean: true } },
