@@ -10,6 +10,9 @@ files:
   - src/lib/useInView.js
   - src/lib/useMediaQuery.js
   - src/components/ui.jsx
+  - src/components/Tour.jsx
+  - src/components/WelcomeDialog.jsx
+  - src/lib/welcome.js
   - src/components/Layout.jsx
   - src/components/Icon.jsx
   - src/components/Toaster.jsx
@@ -264,6 +267,25 @@ chapter fly-through, the camera zoom. Inside a beat, sequences are the `pz-*`
 keyframes in `index.css`. The page wraps itself in `<MotionConfig
 reducedMotion="user">`, and every `pz-*` keyframe ends on its final frame, so
 with reduced motion each beat still shows everything it should.
+
+### Guided tour
+
+`Tour.jsx` walks `tourSteps(newEntries(), { days })` (`src/lib/welcome.js`) —
+one step per new welcome entry — started by **Take the tour** in
+`WelcomeDialog` (`welcome-tour`), mounted by `Layout`. Each step navigates to
+its `href` (an entry's `tourTo`, else `to`), finds `[data-tour="<target>"]`
+(bounded retry), and if it is hidden clicks the `[data-tour-reveal="<reveal>"]`
+control once (the schedule's **Filters** button on a phone). It draws one fixed
+ring (`tour-highlight`) with a large dimming `box-shadow` and a `tour-callout`
+dialog with the counter (`stepLabel`), Back, Next / Done and Skip tour. No
+target means the callout is centred with no ring and the tour moves on. Escape,
+Skip and Done end it where the attendee is and return focus to **What's new**.
+It never writes to the API.
+
+To add a feature to the tour: give its welcome entry `target` and `tourText`
+(plus `tourTo` / `reveal` if needed) and put `data-tour="<target>"` on the
+element. Currently `schedule-tracks` (SchedulePage chip row) and `seat-button`
+(SeatPanel button block).
 
 ### Dialogs
 

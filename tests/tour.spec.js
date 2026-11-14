@@ -86,7 +86,7 @@ test('the tour walks both new features and ends three ways', async ({ page }) =>
     await end();
     await expect(callout).toHaveCount(0);
     await expect(highlight).toHaveCount(0);
-    expect(await page.evaluate(() => document.activeElement && document.activeElement !== document.body)).toBe(true);
+    await expect.poll(() => page.evaluate(() => !!document.activeElement && document.activeElement !== document.body)).toBe(true);
     expect(page.url()).toBe(url);
     await startTour(page);
     await callout.getByRole('button', { name: 'Next' }).click();

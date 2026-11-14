@@ -6,7 +6,7 @@ import { Icon } from './Icon.jsx';
 import { Button } from './ui.jsx';
 
 /** First-visit tour of what is new. Close, Escape, the backdrop and Try it all dismiss it. */
-export function WelcomeDialog({ open, onClose, days }) {
+export function WelcomeDialog({ open, onClose, onTour, days }) {
   const ref = useRef(null);
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
@@ -68,6 +68,7 @@ export function WelcomeDialog({ open, onClose, days }) {
           ))}
         </ul>
         <div className="mt-5 flex justify-end">
+          <Button variant="ghost" onClick={onTour} data-testid="welcome-tour" className="mr-2">Take the tour</Button>
           <Button variant="primary" onClick={onClose}>Close</Button>
         </div>
       </div>
