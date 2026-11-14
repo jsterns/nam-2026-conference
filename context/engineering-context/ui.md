@@ -13,6 +13,10 @@ files:
   - src/components/Tour.jsx
   - src/components/WelcomeDialog.jsx
   - src/lib/welcome.js
+  - tests/tour.spec.js
+  - tests/unit/tour.test.js
+  - tests/unit/welcome.test.js
+  - tests/welcome.spec.js
   - src/components/Layout.jsx
   - src/components/Icon.jsx
   - src/components/Toaster.jsx
