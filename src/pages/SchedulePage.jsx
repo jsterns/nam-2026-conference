@@ -163,7 +163,7 @@ export function SchedulePage() {
 
       <div>
         <h3 className="sr-only text-[11px] font-semibold uppercase tracking-wider text-faint lg:not-sr-only lg:mb-2 lg:block">Track</h3>
-        <div className="hide-scrollbar flex flex-nowrap gap-1.5 overflow-x-auto lg:flex-wrap">
+        <div data-tour="schedule-tracks" className="hide-scrollbar flex flex-nowrap gap-1.5 overflow-x-auto lg:flex-wrap">
           <button type="button" onClick={() => set('track', ALL)} aria-pressed={selectedTracks.length === 0}
             className={cx('shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors',
               selectedTracks.length === 0 ? 'border-white/25 bg-overlay text-ink' : 'border-hairline text-muted hover:text-ink')}>
@@ -239,7 +239,7 @@ export function SchedulePage() {
                 );
               })}
             </div>
-            <Button size="sm" className="lg:hidden" onClick={() => setRailOpen((o) => !o)}>
+            <Button size="sm" className="lg:hidden" data-tour-reveal="filters" onClick={() => setRailOpen((o) => !o)}>
               <Icon name="filter" className="size-3.5" />
               Filters{activeKeys.length ? ` (${activeKeys.length})` : ''}
             </Button>

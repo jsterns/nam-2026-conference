@@ -6,7 +6,7 @@ import { Icon } from './Icon.jsx';
 import { Button } from './ui.jsx';
 
 /** First-visit tour of what is new. Close, Escape, the backdrop and Try it all dismiss it. */
-export function WelcomeDialog({ open, onClose }) {
+export function WelcomeDialog({ open, onClose, onTour, days }) {
   const ref = useRef(null);
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
@@ -57,7 +57,7 @@ export function WelcomeDialog({ open, onClose }) {
               <p className="mt-1 text-[13px] text-muted">{e.description}</p>
               {e.hint && <p className="mt-1 text-[12px] text-faint">{e.hint}</p>}
               <Link
-                to={welcomeHref(e, {})}
+                to={welcomeHref(e, { days })}
                 onClick={onClose}
                 data-testid={`welcome-try-${e.id}`}
                 className="mt-2 inline-flex items-center gap-1 text-[13px] font-semibold text-violet-300 hover:text-violet-200"
@@ -68,6 +68,7 @@ export function WelcomeDialog({ open, onClose }) {
           ))}
         </ul>
         <div className="mt-5 flex justify-end">
+          <Button variant="ghost" onClick={onTour} data-testid="welcome-tour" className="mr-2">Take the tour</Button>
           <Button variant="primary" onClick={onClose}>Close</Button>
         </div>
       </div>

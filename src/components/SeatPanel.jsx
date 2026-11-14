@@ -93,6 +93,7 @@ export function SeatPanel({ session }) {
         </div>
       )}
 
+      <div data-tour="seat-button">
       {status ? (
         <Button variant="ghost" className="w-full" disabled={busy}
           onClick={() => act(releaseSeat)} data-testid="release-seat">
@@ -110,6 +111,7 @@ export function SeatPanel({ session }) {
           {busy ? 'Working…' : isFull ? 'Join the waitlist' : 'Reserve a seat'}
         </Button>
       )}
+      </div>
 
       {session.requiresRsvp && !status && !ended && (
         <p className="text-[11px] text-amber-300">

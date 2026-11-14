@@ -5,7 +5,8 @@ import { UserSwitcher } from './UserSwitcher.jsx';
 import { RouteChange } from './RouteChange.jsx';
 import { ConflictDialog } from './ConflictDialog.jsx';
 import { WelcomeDialog } from './WelcomeDialog.jsx';
-import { hasSeenWelcome, markWelcomeSeen } from '../lib/welcome.js';
+import { Tour } from './Tour.jsx';
+import { hasSeenWelcome, markWelcomeSeen, newEntries, tourSteps } from '../lib/welcome.js';
 import { Icon } from './Icon.jsx';
 import { cx } from './ui.jsx';
 
@@ -34,7 +35,7 @@ function Logo() {
 }
 
 export function Layout() {
-  const { ready, reservations, conflict, resolveConflict, conference } = useConference();
+  const { ready, reservations, conflict, resolveConflict, conference, days } = useConference();
   const [menuOpen, setMenuOpen] = useState(false);
   const [swapping, setSwapping] = useState(false);
   const [welcomeOpen, setWelcomeOpen] = useState(false);
@@ -42,6 +43,7 @@ export function Layout() {
 
   // A first-time visitor gets the welcome once the app has loaded.
   useEffect(() => { if (ready && !hasSeenWelcome()) setWelcomeOpen(true); }, [ready]);
+  const [tour, setTour] = useState(null);
   const closeWelcome = () => { markWelcomeSeen(); setWelcomeOpen(false); };
 
   useEffect(() => { setMenuOpen(false); }, [location.pathname]);
@@ -62,7 +64,13 @@ export function Layout() {
         onCancel={() => resolveConflict(false)}
         busy={swapping}
       />
-      <WelcomeDialog open={welcomeOpen} onClose={closeWelcome} />
+      <WelcomeDialog
+        open={welcomeOpen}
+        onClose={closeWelcome}
+        onTour={() => { closeWelcome(); setTour(tourSteps(newEntries(), { days })); }}
+        days={days}
+      />
+      {tour && <Tour steps={tour} onEnd={() => setTour(null)} />}
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-violet-600 focus:px-4 focus:py-2 focus:text-sm focus:font-semibold"
