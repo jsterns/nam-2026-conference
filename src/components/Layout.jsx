@@ -4,6 +4,8 @@ import { useConference } from '../lib/store.jsx';
 import { UserSwitcher } from './UserSwitcher.jsx';
 import { RouteChange } from './RouteChange.jsx';
 import { ConflictDialog } from './ConflictDialog.jsx';
+import { WelcomeDialog } from './WelcomeDialog.jsx';
+import { hasSeenWelcome, markWelcomeSeen } from '../lib/welcome.js';
 import { Icon } from './Icon.jsx';
 import { cx } from './ui.jsx';
 
@@ -35,7 +37,12 @@ export function Layout() {
   const { ready, reservations, conflict, resolveConflict, conference } = useConference();
   const [menuOpen, setMenuOpen] = useState(false);
   const [swapping, setSwapping] = useState(false);
+  const [welcomeOpen, setWelcomeOpen] = useState(false);
   const location = useLocation();
+
+  // A first-time visitor gets the welcome once the app has loaded.
+  useEffect(() => { if (ready && !hasSeenWelcome()) setWelcomeOpen(true); }, [ready]);
+  const closeWelcome = () => { markWelcomeSeen(); setWelcomeOpen(false); };
 
   useEffect(() => { setMenuOpen(false); }, [location.pathname]);
   useEffect(() => {
@@ -55,6 +62,7 @@ export function Layout() {
         onCancel={() => resolveConflict(false)}
         busy={swapping}
       />
+      <WelcomeDialog open={welcomeOpen} onClose={closeWelcome} />
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-violet-600 focus:px-4 focus:py-2 focus:text-sm focus:font-semibold"
@@ -207,6 +215,13 @@ export function Layout() {
 
           <div className="mt-10 flex flex-col gap-3 border-t border-hairline pt-6 text-xs text-faint sm:flex-row sm:items-center sm:justify-between">
             <p>Aurora Convention Center &amp; The Foundry at Red Rock Yards</p>
+            <button
+              type="button"
+              onClick={() => setWelcomeOpen(true)}
+              className="underline underline-offset-2 transition-colors hover:text-ink"
+            >
+              What’s new
+            </button>
             <p className="font-mono">
               Sessions and speaker data are open —{' '}
               <a href="/api/bootstrap" className="underline underline-offset-2 transition-colors hover:text-ink">

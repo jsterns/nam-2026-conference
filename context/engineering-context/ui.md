@@ -11,6 +11,8 @@ files:
   - src/lib/useMediaQuery.js
   - src/components/ui.jsx
   - src/components/Layout.jsx
+  - src/components/WelcomeDialog.jsx
+  - src/lib/welcome.js
   - src/components/Icon.jsx
   - src/components/Toaster.jsx
   - src/components/Reveal.jsx
@@ -128,7 +130,12 @@ duration })` counts once visible. `HeroMedia` (home hero only) probes
 **`Layout.jsx`** — the route shell (`<Route element={<Layout />}>` in
 `App.jsx`). Renders `<RouteChange />`, the global `<ConflictDialog>` (wired to
 `conflict` / `resolveConflict` from the store), a skip link to `#main`, the
-sticky `glass` header, `<main id="main">`, and the footer.
+sticky `glass` header, `<main id="main">`, and the footer. It also owns the
+first-visit `<WelcomeDialog>` (`welcome-dialog`, one `welcome-try-<id>` link per entry): it
+opens once `ready` when `hasSeenWelcome()` is false, every dismissal calls `markWelcomeSeen()`
+(`orbit:welcomeSeen`, try/catch so blocked storage just reopens it each visit), and the footer
+**What's new** button reopens it. Entries live in `src/lib/welcome.js` (`WELCOME_ENTRIES`,
+`newEntries()`, `welcomeHref()`); a link needing a date takes a function, never a literal.
 
 - `NAV` array (`to, label, icon, end`) drives both the desktop nav (`lg+`,
   `aria-label="Main"`) and the mobile menu (`aria-label="Mobile"`, toggled by

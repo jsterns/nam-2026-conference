@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { API, waitForResults, shotForPR } from './helpers.js';
+import { API, conferenceDays, waitForResults, shotForPR } from './helpers.js';
 
 /**
  * The welcome dialog. Plain page.goto, not visit(): storage must start empty.
@@ -21,18 +21,18 @@ test('welcome opens once, lists what is new, and its Try it links land', async (
   await page.reload();
   await expect(page.getByRole('banner')).toBeVisible();
   await expect(dialog).toBeHidden();
-  await page.getByRole('button', { name: "What's new" }).click();
+  await page.getByRole('button', { name: /What.s new/  }).click();
   await expect(dialog).toBeVisible();
 
   // Close button and backdrop.
-  await dialog.getByRole('button', { name: 'Close' }).first().click();
+  await dialog.getByRole('button', { name: 'Close' }).last().click();
   await expect(dialog).toBeHidden();
-  await page.getByRole('button', { name: "What's new" }).click();
+  await page.getByRole('button', { name: /What.s new/  }).click();
   await page.getByTestId('welcome-backdrop').click({ position: { x: 5, y: 5 } });
   await expect(dialog).toBeHidden();
 
   // Tracks: exactly two chips pressed, count matches the API.
-  await page.getByRole('button', { name: "What's new" }).click();
+  await page.getByRole('button', { name: /What.s new/  }).click();
   await page.getByTestId('welcome-try-tracks').click();
   await expect(dialog).toBeHidden();
   await expect(page).toHaveURL(/\/schedule\?/);
@@ -43,20 +43,20 @@ test('welcome opens once, lists what is new, and its Try it links land', async (
   const pressed = page.locator('button[aria-pressed="true"]').filter({ hasNotText: /^All$/ });
   const chips = await pressed.evaluateAll((els) => els.filter((e) => e.className.includes('rounded-full') && e.className.includes('shrink-0')).length);
   expect(chips).toBe(2);
-  const sessions = await (await fetch(`${API}/sessions?trackSlug=${slugs}`)).json();
+  const sessions = await (await fetch(`${API}/sessions?day=${(await conferenceDays())[0]}&trackSlug=${slugs}`)).json();
   const list = Array.isArray(sessions) ? sessions : sessions.sessions;
   await expect(page.getByTestId('result-count')).toContainText(String(list.length));
 
   // Venue: a Foundry session whose next slot has an Aurora session.
-  await page.getByRole('button', { name: "What's new" }).click();
+  await page.getByRole('button', { name: /What.s new/  }).click();
   await page.getByTestId('welcome-try-venues').click();
   await expect(page).toHaveURL(/\/sessions\/\d+/);
   const id = Number(new URL(page.url()).pathname.split('/').pop());
   const s = await (await fetch(`${API}/sessions/${id}`)).json();
-  expect(s.venueName).toMatch(/Foundry/);
+  expect(s.venue.name).toMatch(/Foundry/);
   const all = await (await fetch(`${API}/sessions?day=${s.day}`)).json();
   const day = Array.isArray(all) ? all : all.sessions;
-  const [h, m] = s.endsAt.split(':').map(Number);
-  const next = `${String(Math.floor((h * 60 + m + 30) / 60)).padStart(2, '0')}:${String((m + 30) % 60).padStart(2, '0')}`;
-  expect(day.some((x) => x.startsAt === next && /Aurora/.test(x.venueName))).toBe(true);
+  const later = day.filter((x) => x.startsAt >= s.endsAt).map((x) => x.startsAt).sort();
+  const nextSlot = later[0];
+  expect(day.some((x) => x.startsAt === nextSlot && /Aurora/.test(x.venue.name))).toBe(true);
 });
