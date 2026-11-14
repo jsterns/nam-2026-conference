@@ -233,3 +233,46 @@ test.describe('Ended sessions', () => {
     for (const l of ['Venue', 'Level', 'Format', 'Topic']) await expect(page.getByLabel(l)).toBeVisible();
   });
 });
+
+test.describe('Schedule track chips', () => {
+  test('several tracks can be selected, removed and reset', async ({ page, request }, testInfo) => {
+    const mobile = testInfo.project.name === 'mobile';
+    const boot = await (await request.get(`${API}/bootstrap`)).json();
+    const [ta, tb] = boot.tracks;
+    const day = (await conferenceDays())[1];
+    const count = async (slugs) => {
+      const q = slugs.length ? `&trackSlug=${slugs.join(',')}` : '';
+      return (await (await request.get(`${API}/sessions?day=${day}${q}`)).json()).length;
+    };
+    const label = (n) => `${n} session${n === 1 ? '' : 's'}`;
+    const chip = (t) => page.getByRole('button', { name: t.shortName ?? t.name, exact: true });
+    const total = page.getByTestId('result-count');
+    const openRail = async () => { if (mobile) await page.getByRole('button', { name: /^Filters/ }).click(); };
+
+    // an existing single-slug link still works
+    await visit(page, `/schedule?view=list&day=${day}&track=${ta.slug}`);
+    await openRail();
+    await waitForResults(page);
+    await expect(chip(ta)).toHaveAttribute('aria-pressed', 'true');
+    await expect(chip(tb)).toHaveAttribute('aria-pressed', 'false');
+    await expect(total).toHaveText(label(await count([ta.slug])));
+
+    // add a second track
+    await chip(tb).click();
+    await expect(chip(ta)).toHaveAttribute('aria-pressed', 'true');
+    await expect(chip(tb)).toHaveAttribute('aria-pressed', 'true');
+    await expect(total).toHaveText(label(await count([ta.slug, tb.slug])));
+    await shotForPR(page, 'two tracks selected');
+
+    // remove the first
+    await chip(ta).click();
+    await expect(chip(ta)).toHaveAttribute('aria-pressed', 'false');
+    await expect(total).toHaveText(label(await count([tb.slug])));
+
+    // All resets
+    await page.getByRole('button', { name: 'All', exact: true }).click();
+    await expect(chip(tb)).toHaveAttribute('aria-pressed', 'false');
+    await expect(total).toHaveText(label(await count([])));
+    await expect(page).not.toHaveURL(/track=/);
+  });
+});
