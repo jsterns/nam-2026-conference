@@ -47,6 +47,7 @@ export const MID_SESSION_TIME = '10:30';   // inside the 10:15 slot
 export async function visit(page, path = '/', { as = ATTENDEES.jonas, at = null } = {}) {
   await page.addInitScript(({ id, clockAt }) => {
     window.localStorage.setItem('orbit:currentUserId', String(id));
+    window.localStorage.setItem('orbit:welcomeSeen', '1');
     if (clockAt) window.localStorage.setItem('orbit:clockAt', clockAt);
     else window.localStorage.removeItem('orbit:clockAt');
   }, { id: as, clockAt: at });

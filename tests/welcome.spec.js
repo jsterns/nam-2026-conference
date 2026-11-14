@@ -21,18 +21,18 @@ test('welcome opens once, lists what is new, and its Try it links land', async (
   await page.reload();
   await expect(page.getByRole('banner')).toBeVisible();
   await expect(dialog).toBeHidden();
-  await page.getByRole('button', { name: "What's new" }).click();
+  await page.getByRole('button', { name: /What.s new/  }).click();
   await expect(dialog).toBeVisible();
 
   // Close button and backdrop.
   await dialog.getByRole('button', { name: 'Close' }).first().click();
   await expect(dialog).toBeHidden();
-  await page.getByRole('button', { name: "What's new" }).click();
+  await page.getByRole('button', { name: /What.s new/  }).click();
   await page.getByTestId('welcome-backdrop').click({ position: { x: 5, y: 5 } });
   await expect(dialog).toBeHidden();
 
   // Tracks: exactly two chips pressed, count matches the API.
-  await page.getByRole('button', { name: "What's new" }).click();
+  await page.getByRole('button', { name: /What.s new/  }).click();
   await page.getByTestId('welcome-try-tracks').click();
   await expect(dialog).toBeHidden();
   await expect(page).toHaveURL(/\/schedule\?/);
@@ -48,7 +48,7 @@ test('welcome opens once, lists what is new, and its Try it links land', async (
   await expect(page.getByTestId('result-count')).toContainText(String(list.length));
 
   // Venue: a Foundry session whose next slot has an Aurora session.
-  await page.getByRole('button', { name: "What's new" }).click();
+  await page.getByRole('button', { name: /What.s new/  }).click();
   await page.getByTestId('welcome-try-venues').click();
   await expect(page).toHaveURL(/\/sessions\/\d+/);
   const id = Number(new URL(page.url()).pathname.split('/').pop());
