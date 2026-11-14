@@ -7,6 +7,7 @@ files:
   - src/components/VenueBoard.jsx
   - src/components/VenueRouteMap.jsx
   - src/lib/travel.js
+  - src/lib/congestion.js
   - src/pages/ExpoPage.jsx
   - src/pages/FoodPage.jsx
   - src/pages/AccessibilityPage.jsx
@@ -14,6 +15,7 @@ files:
   - src/components/SponsorMarquee.jsx
 tests:
   - tests/unit/travel.test.js
+  - tests/unit/congestion.test.js
   - tests/smoke.spec.js
   - tests/live.spec.js
 related: [seed, clock, schedule, agenda, ui]
@@ -102,6 +104,21 @@ fewer than 4; renders the list twice for the `animate-marquee` loop (second copy
 of step-free rooms, `Hearing loop`, `Live captions`, stairs-only; a
 `data-testid="stairs-only"` list (self-hides); a room-by-room list.
 **`CodeOfConductPage`** — static copy in `EXPECTED` / `UNACCEPTABLE` arrays.
+
+## Congestion estimates
+
+`src/lib/congestion.js` is pure (no `Date`, no randomness): given `time`
+(`HH:MM`) and `sessionEnds` (end times at the departure venue) it returns
+estimates, each with a `label` worded as an estimate. `shuttleEstimate` ->
+`{wait, queue, total}` (departures every 20 min from 07:00; wait is 0 at a
+departure, 19 a minute after; queue is 15 min for 10 min after a session ends,
+easing to 0 by 20). `pickupEstimate` -> `{wait}` (same surge, +3 after 18:00).
+`doorEstimate({seatsTaken, capacity})` -> `{earlyMinutes, advice}` (>=90% full:
+arrive 10 min early; full: waitlist only; else `advice: null`). `foodEstimate`
+-> `{wait}` peaking at 12:30. `estimateLeg` wraps `assessTravel`, adding `wait`,
+`totalNow`, `fitsNow` per option (Shuttle uses the shuttle total, Rideshare/Taxi
+the pickup wait), plus `fastestNow` and `impossibleNow`. Tuning constants sit at
+the top of the file. No page uses it yet.
 
 ## Invariants
 
