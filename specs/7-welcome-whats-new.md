@@ -8,7 +8,7 @@ A first-time visitor (empty `localStorage`) sees a **Welcome to ORBIT** dialog o
 - `src/components/WelcomeDialog.jsx` (new) — copies `ConflictDialog`: portalled to `document.body`, backdrop `<button aria-label="Close">`, focus in and handed back, Escape, `max-h-[85dvh]` panel scrolling on a phone, `role="dialog"` named "Welcome to ORBIT", heading "New in this update", `data-testid="welcome-dialog"`, one `Link` per entry (`data-testid="welcome-try-<id>"`) that closes it.
 - `src/components/Layout.jsx` — `welcomeOpen` state, initialised to open once `ready` when `!hasSeenWelcome()`; close calls `markWelcomeSeen()`; a **What's new** `<button>` (not a link) in the footer's bottom row reopens it. Only `Layout` pages are affected, not the decks.
 - `tests/helpers.js` — `visit` also sets `orbit:welcomeSeen` in its init script, so every existing spec starts with it dismissed.
-- `tests/welcome.spec.js` (new) — plain `page.goto` (no `visit`, so storage starts empty); uses `conferenceDays()` is not needed; reads `/api/sessions` and `/api/bootstrap` to assert against the API. No seats are booked, so no lane is needed.
+- `tests/welcome.spec.js` (new) — plain `page.goto` (no `visit`, so storage starts empty); reads `/api/sessions` and `/api/bootstrap` to assert against the API. No seats are booked, so no lane is needed.
 - Docs: `context/engineering-context/ui.md` (Layout, welcome, `visit` marks it seen), `testing.md` (`visit` helper).
 
 ## How it will be proved
