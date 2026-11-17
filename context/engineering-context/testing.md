@@ -92,7 +92,7 @@ instead of silently testing another worktree's app.
 - `momentOn(dayIndex, 'HH:MM')` → `'YYYY-MM-DDTHH:MM'`; `MID_SESSION_TIME = '10:30'`
   (inside the 10:15 slot).
 - `visit(page, path = '/', { as = ATTENDEES.jonas, at = null })` — an init script sets
-  `orbit:currentUserId` and sets `orbit:welcomeSeen` (so the welcome dialog never covers a spec; `welcome.spec.js` uses plain `page.goto` to start with empty storage), sets or **removes** `orbit:clockAt`, then `goto` and waits for
+  `orbit:currentUserId` (the welcome is already seen: `playwright.config.js` gives every spec a `storageState` with `orbit:welcomeSeen`; `welcome.spec.js` opts out with `test.use({ storageState: { cookies: [], origins: [] } })`), sets or **removes** `orbit:clockAt`, then `goto` and waits for
   the `banner` role.
 - `failOnPageErrors(page, errors = [])` → array filled with console errors and page errors.
 - `waitForResults(page, testId = 'result-count')` — waits until that testid stops saying Loading.
