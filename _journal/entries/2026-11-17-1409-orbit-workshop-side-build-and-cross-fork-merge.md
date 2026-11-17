@@ -46,3 +46,10 @@ original_header: "### 2026-11-17 14:09 UTC: ORBIT workshop side build and cross-
 - If revisited: open one PR from the side fork's `main` to the team's `main`, after checking what the team merged after 2026-11-14.
 - Navigation drafts R1 to R5 in `~/nam-2026/orbit-handoff/navigation-plan.md` remain unbuilt.
 - Optional: the styled "Jungle Cats" PDF edition of the user guide.
+
+**Addendum, 2026-11-17 14:23 UTC: host Node environment restored.**
+- What the session had changed: a single line in `~/.zshrc`, `export PATH="/opt/homebrew/opt/node@22/bin:$PATH"`, which put Homebrew `node@22` first on PATH for every shell. It began folder-scoped and was made global because Claude Code's session shell starts outside the project folder. Nothing was downgraded, uninstalled or relinked.
+- What was already broken before the session: Homebrew `node` 26.7.0 failed to start, because it was built against `libsimdjson.33.dylib` and `simdjson` had since been upgraded to 5.1.1.
+- Repair: `brew reinstall node` installed 26.13.1, which runs against the current simdjson; the `~/.zshrc` line was removed (backup at `~/.zshrc.bak-orbit-node22`). A clean login shell now resolves `/opt/homebrew/bin/node` v26.13.1 with npm 11.20.0.
+- Still true: `node@22` remains installed but off PATH. This repo needs Node 22, so a return to it starts with `export PATH="$(brew --prefix node@22)/bin:$PATH"` in that terminal. Shells opened before the repair keep Node 22 until restarted.
+- Claude's mistake: the first removal attempt used `grep -v -x` with the line as a regex, where `$PATH` did not match literally, so nothing was removed; caught by the diff and redone with `grep -F`.
